@@ -2,7 +2,8 @@
 .App {
   text-align: center;
   font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  background-image: url("./images/background.png");
+    background-size: cover;
   margin: 0;
   padding: 0;
   height: 100vh;

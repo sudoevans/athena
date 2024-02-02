@@ -5,7 +5,8 @@ import './App.css'
 function App() {
   return (
     <div className="App">
-      <h1>NewsGPT Chat</h1>
+      <h1>Athena</h1>
+      <p>Ask me anything</p>
       <Chat />
     </div>
   );
