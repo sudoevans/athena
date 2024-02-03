@@ -1,43 +1,51 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
-from twilio.rest import Client
-import dotenv
+# from flask import Flask, request, jsonify
+# from flask_cors import CORS, cross_origin
+# from twilio.rest import Client
+# import dotenv
+# import os
+
+# dotenv.load_dotenv()
+
 import os
+import flask
+from flask import request
+from twilio_integration import send_whatsapp_message
+from phi_model import chat_with_athena
 
-dotenv.load_dotenv()
+# Flask app setup
+app = flask.Flask(__name__)
 
-# Get the database URL from the environment variables
+# Routes
+@app.route('/')
+@app.route('/home')
+def home():
+    return "<h1>Athena Home</h1>"
+#Endpoint for twilio callback
+@app.route('/whatsapp', methods=['POST'])
+def whatsapp():
+    try:
+        message = request.form['Body']
+        sender_id = request.form['From'].split('+')[1]
+        print(f'Message --> {message}')
+        print(f'Sender ID --> {sender_id}')
 
+        # Send user message to phi model
+        response = chat_with_athena(message)
+        print("Model Response:", response[0])
 
-app = Flask(__name__)
-CORS(app)  
-app.config['CORS_HEADERS'] = 'Content-Type'
+        # Send model response to user via WhatsApp
+        send_whatsapp_message(sender_id, response)
 
-def complete(messages, function_call="auto"):
-    messages.append({"role": "system", "content": "this is my response"})
+        return '200'
+    except Exception as e:
+        print(f"Error handling WhatsApp message: {e}")
+        return '500'
 
-@app.route('/query', methods=["POST"])
-@cross_origin()
-def process_query():
-    data = request.json
-    messages = data.get("messages", [])
-    complete(messages)
-    response_content = messages[-1]["content"]
-
-    return jsonify({"response": response_content})
-
-
-account_sid = os.getenv("ACCOUNT_SID")
-auth_token = os.getenv("AUTH_TOKEN")
-client = Client(account_sid, auth_token)
-
-message = client.messages.create(
-  from_='whatsapp:+14155238886',
-  body='Your appointment is coming upnow',
-  to='whatsapp:+12028219726'
-)
-
-print(message.sid)
+# Fail callback route
+@app.route('/fail', methods=['GET', 'POST'])
+def fail():
+    return "Fail"
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(port=5000, debug=True)
+
